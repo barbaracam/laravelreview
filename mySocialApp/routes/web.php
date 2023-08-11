@@ -38,7 +38,7 @@ Route::put('post/{post}', [PostController::class, 'realUpdate'])->middleware('ca
 
 
 //Profile routes
-//when match{laravel will do the lookout for you}, but as we dont want check by id, we will by username
+//when match{}laravel will do the lookout for you, but as we dont want check by id, we will by username
 Route::get('/profile/{user:username}', [UserController::class, 'profile'])->middleware('auth');
 
 //Gate Example
@@ -50,5 +50,9 @@ Route::get('/profile/{user:username}', [UserController::class, 'profile'])->midd
 // });
 //or
 Route::get('/admins-only', function(){ return 'Yeah you are an admin';})->middleware('can:visitAdminPages');
-   
+
+
+//Avatar
+Route::get('/manage-avatar', [UserController::class, 'showAvatarForm'])->middleware('MustBeLogged');
+Route::post('/manage-avatar', [UserController::class, 'storeAvatar'])->middleware('MustBeLogged');
 
