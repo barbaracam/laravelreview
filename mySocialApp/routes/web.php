@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\example;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FollowController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,11 +36,15 @@ Route::delete('/post/{post}', [PostController::class, 'deletePost']);
 // lets nopw edit and need two routers
 Route::get('post/{post}/edit', [PostController::class, 'showEditForm'])->middleware('can:update,post');
 Route::put('post/{post}', [PostController::class, 'realUpdate'])->middleware('can:update,post');
+//search
+Route::get('/search/{term}', [PostController::class, 'search']);
 
 
 //Profile routes
 //when match{}laravel will do the lookout for you, but as we dont want check by id, we will by username
 Route::get('/profile/{user:username}', [UserController::class, 'profile'])->middleware('auth');
+Route::get('/profile/{user:username}/followers', [UserController::class, 'profileFollowers'])->middleware('auth');
+Route::get('/profile/{user:username}/following', [UserController::class, 'profileFollowing'])->middleware('auth');
 
 //Gate Example
 // Route::get('/admins-only', function(){
@@ -55,4 +60,8 @@ Route::get('/admins-only', function(){ return 'Yeah you are an admin';})->middle
 //Avatar
 Route::get('/manage-avatar', [UserController::class, 'showAvatarForm'])->middleware('MustBeLogged');
 Route::post('/manage-avatar', [UserController::class, 'storeAvatar'])->middleware('MustBeLogged');
+
+//follows
+Route::post('create-follow/{user:username}', [FollowController::class, 'createFollow'])->middleware('MustBeLogged');
+Route::post('remove-follow/{user:username}', [FollowController::class, 'removeFollow'])->middleware('MustBeLogged');
 

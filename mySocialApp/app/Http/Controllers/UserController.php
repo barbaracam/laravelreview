@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Follow;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\View;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,7 +15,7 @@ class UserController extends Controller
     //login
     public function login(Request $request){
         $incomingFields = $request->validate([
-            //the loginusername/loginpassword come from the form
+            //the loginusername/loginpassword come from the form in the layout
             'loginusername' => 'required',         
             'loginpassword' => 'required',
         ]);
@@ -46,7 +48,9 @@ class UserController extends Controller
     // if you login go to the feed, otherwise sign up
     public function showCorrectHomepage(){
         if(auth()->check()){
-            return view('homepage-in');
+            //feedPosts() from the model user is the function
+            //we change the get() by paginate()
+            return view('homepage-in',['posts'=>auth()->user()->feedPosts()->latest()->paginate(3)]);
         } else {
             return view('homepage');
         }
@@ -58,57 +62,84 @@ class UserController extends Controller
         return redirect('/')->with('success','You have Logout!!');
     }
 
+    private function getSharedData($user){
+        //below is a json example of the info we get
+        // $thePosts = $user->posts()->get();
+        // return $thePosts;
+        //we provide username as well in the view array, if not will check by the id
+        $currentlyFollowing = 0;
+    
+        if(auth()->check()){
+            //will check bolean, if it is already following
+            $currentlyFollowing = Follow::where([['user_id','=',auth()->user()->id],['followeduser','=', $user->id]])->count();
+        }
+
+        View::share('sharedData', [ 'currentlyFollowing'=> $currentlyFollowing,'avatar'=>$user->avatar ,'username'=> $user->username, 'postCount'=> $user->posts()->count(), 'followerCount' => $user->followers()->count(), 'followingCount' => $user->followers()->count()]);
+
+    }
+
 
     //Profile functions below
-   public function profile(User $user){
-    //below is a json example of the info we get
-    // $thePosts = $user->posts()->get();
-    // return $thePosts;
-    //we provide username as well in the view array, if not will check by the id
-    return view('profile-posts',[ 'avatar'=>$user->avatar ,'username'=> $user->username, 'posts'=> $user->posts()->latest()->get(), 'postCount'=> $user->posts()->count()]);
+   public function profile(User $user){  
+
+        $this->getSharedData($user); 
+        return view('profile-posts',[ 'posts'=> $user->posts()->latest()->get()]);
    }
 
    public function showAvatarForm(){
         return view('avatar-form');
-   }
-   
-
-
+   } 
 
    public function storeAvatar(Request $request){
-    $request->validate([
-        //it says has to be require and image
-        'avatar' => 'required|image|max:3000',        
-    ]);
-    // $request->file('avatar')->store('public/avatars');
+        $request->validate([
+            //it says has to be require and image
+            'avatar' => 'required|image|max:3000',        
+        ]);
+        // $request->file('avatar')->store('public/avatars');
 
-    //create aun unique name for the file
-    $user = auth()->user();
-    $filename = $user->id.'_'. uniqid().'.jpg';
-    
-    // we opened the package installed Image::make() to resize pics like below   
-    $imgData = Image::make($request->file('avatar'))->fit(120)->encode('jpg');
-    //storage the picture
-    Storage::put('public/avatars/'.$filename, $imgData);
+        //create aun unique name for the file
+        $user = auth()->user();
+        $filename = $user->id.'_'. uniqid().'.jpg';
+        
+        // we opened the package installed Image::make() to resize pics like below   
+        $imgData = Image::make($request->file('avatar'))->fit(120)->encode('jpg');
+        //storage the picture
+        Storage::put('public/avatars/'.$filename, $imgData);
 
-    $oldAvatar = $user->avatar;
+        $oldAvatar = $user->avatar;
 
-    //added in the database
-    $user->avatar = $filename;
-    $user->save();
+        //added in the database
+        $user->avatar = $filename;
+        $user->save();
 
-    if($oldAvatar != '/fallback-avatar.jpg'){
-        Storage::delete(str_replace('/storage/', 'public/',$oldAvatar ));
+        if($oldAvatar != '/fallback-avatar.jpg'){
+            Storage::delete(str_replace('/storage/', 'public/',$oldAvatar ));
+        }
+
+        return back()->with('success', 'congrats on the update');
+
     }
-    return back()->with('success', 'congrats on the update');
 
-   }
+    ///Function to profile/followers
+
+    public function profileFollowers(User $user){
+
+        $this->getSharedData($user);
+        //debug code below
+        // return $user->followers()->latest()->get(); 
+        return view('profile-followers',[ 'followers'=> $user->followers()->latest()->get()]);
+    }
 
 
+    ///Function to profile/following
+    public function profileFollowing(User $user){ 
 
+        //the following() before user come from the name of the function in user model
+        
+        $this->getSharedData($user); 
+        return view('profile-following',[ 'following'=> $user->following()->latest()->get()]);
 
-
-
+    }
 
 
 }

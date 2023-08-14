@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Post;
+use App\Models\Follow;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -53,5 +55,20 @@ class User extends Authenticatable
     public function posts() {
         //user_id column name
         return $this->hasMany(Post::class, 'user_id');
+    }
+
+    public function followers() {
+
+        return $this->hasMany(Follow::class, 'followeduser', 'id');
+    }
+    public function following(){
+        
+        return $this->hasMany(Follow::class, 'user_id', 'id');
+    }
+
+    public function feedPosts(){
+        //hasmanythrough is for intermedia table relationships
+        //last class, we want to end, 2 intermedium class, 3 foreign key itermedium table, 4 it is the foreing key for the last class to end, 5 local key actual model, 6 itermedium table the other foreign key for the extra relationship
+        return $this->hasManyThrough(Post::class, Follow::class, 'user_id', 'user_id', 'id','followeduser' );
     }
 }

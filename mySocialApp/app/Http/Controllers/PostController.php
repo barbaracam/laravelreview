@@ -73,4 +73,16 @@ class PostController extends Controller
         return back()->with('success', 'Post Updated it!!!');
 
     }
+
+    //search
+
+    public function search($term){
+        //remember is another method check chap48, no the laravel provider is the othe roption
+        //below laravel way //get username too with load()
+        $posts = Post::search($term)->get();        
+        $posts->load('user:id,username,avatar');
+        return $posts;
+
+
+    }
 }
