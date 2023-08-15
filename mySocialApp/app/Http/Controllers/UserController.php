@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Follow;
 use Illuminate\Http\Request;
+use App\Events\OurExampleEvent;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\View;
 use Intervention\Image\Facades\Image;
@@ -23,6 +24,7 @@ class UserController extends Controller
         //universal available function from laravel call auth
         if(auth()->attempt(['username' => $incomingFields['loginusername'],'password' => $incomingFields['loginpassword'] ])){
             $request->session()->regenerate();
+            event(new OurExampleEvent(['username'=> auth()->user()->username, 'action'=> 'login']));
             return redirect('/')->with('success','You have successful Login!!');
         }else {
             return redirect('/')->with('fail','invalid login');
@@ -58,7 +60,8 @@ class UserController extends Controller
 
     //logout function
     public function logout(){
-        auth()->logout();
+        event(new OurExampleEvent(['username'=> auth()->user()->username, 'action'=> 'logout']));
+        auth()->logout();        
         return redirect('/')->with('success','You have Logout!!');
     }
 
@@ -138,6 +141,29 @@ class UserController extends Controller
         
         $this->getSharedData($user); 
         return view('profile-following',[ 'following'=> $user->following()->latest()->get()]);
+
+    }
+
+
+    //With Raw to obtain json data
+    public function profileRaw(User $user){  
+
+        return response()->json(['theHTML'=>view('profile-post-only', ['posts'=>$user->posts()->latest()->get()])->render(), 'doctitle'=>$user->username. " s' profile"]);
+
+   }
+
+   ///Function to profile/followers Raw
+
+   public function profileFollowersRaw(User $user){
+
+    return response()->json(['theHTML'=>view('profile-followers-only', ['followers'=>$user->followers()->latest()->get()])->render(), 'doctitle'=>$user->username. " s' followers"]);
+
+    }
+
+
+    ///Function to profile/following Raw
+    public function profileFollowingRaw(User $user){ 
+        return response()->json(['theHTML'=>view('profile-following-only', ['following'=>$user->following()->latest()->get()])->render(), 'doctitle'=> 'who ' . $user->username. " follows"]);
 
     }
 

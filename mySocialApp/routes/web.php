@@ -1,7 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Events\chatMessage;
 // use App\Http\Controllers\example;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FollowController;
@@ -46,6 +48,16 @@ Route::get('/profile/{user:username}', [UserController::class, 'profile'])->midd
 Route::get('/profile/{user:username}/followers', [UserController::class, 'profileFollowers'])->middleware('auth');
 Route::get('/profile/{user:username}/following', [UserController::class, 'profileFollowing'])->middleware('auth');
 
+
+//spa
+Route::middleware('cache.headers:public;max_age=20;etag')->group(function(){
+    Route::get('/profile/{user:username}/raw', [UserController::class, 'profileRaw'])->middleware('auth');
+    Route::get('/profile/{user:username}/followers/raw', [UserController::class, 'profileFollowersRaw'])->middleware('auth');
+    Route::get('/profile/{user:username}/following/raw', [UserController::class, 'profileFollowingRaw'])->middleware('auth');
+
+});
+
+
 //Gate Example
 // Route::get('/admins-only', function(){
 //     if(Gate::allows('visitAdminPages')){
@@ -64,4 +76,22 @@ Route::post('/manage-avatar', [UserController::class, 'storeAvatar'])->middlewar
 //follows
 Route::post('create-follow/{user:username}', [FollowController::class, 'createFollow'])->middleware('MustBeLogged');
 Route::post('remove-follow/{user:username}', [FollowController::class, 'removeFollow'])->middleware('MustBeLogged');
+
+
+//Chat
+//chat route
+Route::post('/send-chat-message', function(Request $request){
+    $formFields = $request->validate([
+        'textvalue' => 'required'
+    ]);
+    if(!trim(strip_tags($formFields['textvalue']))){
+        return response()->noContent(); 
+    }
+    
+    //we are broadcasting a new instance of a chat message event to others
+     broadcast(new ChatMessage(['username'=>auth()->user()->username, 'textvalue'=> strip_tags($request->textvalue), 'avatar'=> auth()->user()->avatar]))->toOthers();
+    return response()->noContent();
+})->middleware('MustBeLogged');
+
+//spa
 
