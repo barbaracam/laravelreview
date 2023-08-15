@@ -85,4 +85,30 @@ class PostController extends Controller
 
 
     }
+
+    //create a post with api
+
+    public function storeNewPostApi(Request $request){
+        $incomingFields = $request->validate([
+            'title' => 'required',
+            'body' =>'required',            
+        ]);
+
+        $incomingFields['title']= strip_tags($incomingFields['title']);
+        $incomingFields['body']= strip_tags($incomingFields['body']);
+        $incomingFields['user_id']= auth()->id();
+
+        //attach the model with the fields
+        $newPost = Post::create($incomingFields);
+
+        return $newPost->id;
+    }
+
+    //delete post api
+
+    public function deletePostApi(Post $post){
+        $post->delete();
+        return 'true';
+    }
+
 }

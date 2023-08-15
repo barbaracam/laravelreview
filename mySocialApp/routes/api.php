@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\PostController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,3 +19,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::post('/login', [userController::class, 'loginApi']);
+//sanctum is token base no cookie base
+Route::post('/create-post', [PostController::class, 'storeNewPostApi'])->middleware('auth:sanctum');
+//can be delete only if u are the user
+Route::delete('/delete-post/{post}', [PostController::class, 'deletePostApi']);

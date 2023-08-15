@@ -51,7 +51,7 @@ class PostPolicy
         if($user->isAdmin === 1 ){
             return true;
         }        
-        return $user->id ===$post->user_id;
+        return $user->id === $post->user_id;
     }
 
     /**
